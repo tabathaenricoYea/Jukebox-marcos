@@ -1,0 +1,44 @@
+name: Build APK Jukebox MarcoS
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Create project
+        run: |
+          mkdir -p app/src/main/java/com/wurlitzer/jukebox
+          echo "include ':app'" > settings.gradle
+          echo "buildscript{repositories{google();mavenCentral()} dependencies{classpath 'com.android.tools.build:gradle:8.2.0'}} allprojects{repositories{google();mavenCentral()}}" > build.gradle
+          cat > app/build.gradle <<'EOF'
+          plugins{id 'com.android.application'}
+          android{namespace 'com.wurlitzer.jukebox';compileSdk 34;defaultConfig{applicationId "com.wurlitzer.jukebox";minSdk 21;targetSdk 34;versionCode 1;versionName "1.0-MarcoS"};buildTypes{release{minifyEnabled false}}}
+          dependencies{implementation 'androidx.appcompat:appcompat:1.6.1';implementation 'androidx.leanback:leanback:1.0.0'}
+          EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET"/><application android:allowBackup="true" android:label="Jukebox MarcoS" android:theme="@android:style/Theme.NoTitleBar.Fullscreen"><activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LEANBACK_LAUNCHER"/></intent-filter></activity></application></manifest>
+          EOF
+          cat > app/src/main/java/com/wurlitzer/jukebox/AppConfig.kt <<'EOF'
+          package com.wurlitzer.jukebox
+          object AppConfig{const val SPOTIFY_CLIENT_ID="b01b99b43d3342b596a2711efeac4d62";const val SPOTIFY_REDIRECT_URI="com.wurlitzer.jukebox://callback"}
+          EOF
+          cat > app/src/main/java/com/wurlitzer/jukebox/MainActivity.kt <<'EOF'
+          package com.wurlitzer.jukebox
+          import android.os.Bundle;import android.widget.*;import androidx.appcompat.app.AppCompatActivity
+          class MainActivity:AppCompatActivity(){override fun onCreate(b:Bundle?){super.onCreate(b);val l=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};val t=TextView(this).apply{text="JUKEBOX MARCOS - ${AppConfig.SPOTIFY_CLIENT_ID.take(6)} - 100 slot A-J 1-10";textSize=20f};l.addView(t);val g=GridLayout(this).apply{columnCount=10};AppConfig::class.java.getDeclaredField("INSTANCE");val letters=listOf("A","B","C","D","E","F","G","H","I","J");for(L in letters){for(n in 1..10){val bu=Button(this).apply{text="$L$n"};g.addView(bu)}};l.addView(g);setContentView(l)}}
+          EOF
+      - name: Build with Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+          ./gradle-8.5/bin/gradle wrapper
+          ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Jukebox-MarcoS-APK
+          path: app/build/outputs/apk/debug/*.apk
