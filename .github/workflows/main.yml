@@ -20,16 +20,23 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Create Project Files
         run: |
-          cat > settings.gradle <<'EOF'
-          pluginManagement {
-            repositories {
-              google()
-              mavenCentral()
-              gradlePluginPortal()
-            }
-          }
-          include ':app'
-          EOF
+         cat > settings.gradle <<'EOF'
+pluginManagement {
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    google()
+    mavenCentral()
+  }
+}
+include ':app'
+EOF
           cat > build.gradle <<'EOF'
           plugins {
             id 'com.android.application' version '8.2.2' apply false
