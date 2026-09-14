@@ -7,41 +7,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Clean old files
         run: |
           rm -rf build.gradle settings.gradle app gradle gradlew local.properties
           mkdir -p app/src/main/java/com/wurlitzer/jukebox
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
       - name: Create Project Files
         run: |
-         cat > settings.gradle <<'EOF'
-pluginManagement {
-  repositories {
-    google()
-    mavenCentral()
-    gradlePluginPortal()
-  }
-}
-dependencyResolutionManagement {
-  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-  repositories {
-    google()
-    mavenCentral()
-  }
-}
-include ':app'
-EOF
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+            repositories {
+              google()
+              mavenCentral()
+              gradlePluginPortal()
+            }
+          }
+          dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+              google()
+              mavenCentral()
+            }
+          }
+          include ':app'
+          EOF
+
           cat > build.gradle <<'EOF'
           plugins {
             id 'com.android.application' version '8.2.2' apply false
           }
           EOF
+
           cat > app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
@@ -66,21 +72,53 @@ EOF
               implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
+
           cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="Jukebox MarcoS" android:theme="@android:style/Theme.NoTitleBar.Fullscreen"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:label="Jukebox MarcoS" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
           EOF
+
           cat > app/src/main/java/com/wurlitzer/jukebox/MainActivity.java <<'EOF'
-          package com.wurlitzer.jukebox; import android.app.Activity; import android.os.Bundle; import android.webkit.WebView; import android.webkit.WebSettings; public class MainActivity extends Activity { protected void onCreate(Bundle b){ super.onCreate(b); WebView w=new WebView(this); WebSettings s=w.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); w.loadUrl("https://wurlitzer-jukebox.vercel.app/?client=b01b99b43d3342b596a2711efeac4d62"); setContentView(w); } }
+          package com.wurlitzer.jukebox;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebView;
+          import android.webkit.WebSettings;
+          public class MainActivity extends Activity {
+              protected void onCreate(Bundle b){
+                  super.onCreate(b);
+                  WebView w=new WebView(this);
+                  WebSettings s=w.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setAllowFileAccess(true);
+                  w.loadUrl("https://wurlitzer-jukebox.vercel.app/?client=b01b99b43d3342b596a2711efeac4d62");
+                  setContentView(w);
+              }
+          }
           EOF
+
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           mkdir -p gradle/wrapper
           echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" > gradle/wrapper/gradle-wrapper.properties
+
       - name: Setup Gradle 8.7
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
+
       - name: Build APK
         run: gradle assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
