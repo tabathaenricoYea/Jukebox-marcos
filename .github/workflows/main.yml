@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Clean old files
         run: |
-          rm -rf build.gradle settings.gradle app gradle gradlew local.properties
+          rm -rf build.gradle settings.gradle app gradle gradlew local.properties gradle.properties
           mkdir -p app/src/main/java/com/wurlitzer/jukebox
 
       - name: Set up Java 17
@@ -24,6 +24,12 @@ jobs:
 
       - name: Create Project Files
         run: |
+          cat > gradle.properties <<'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m
+          EOF
+
           cat > settings.gradle <<'EOF'
           pluginManagement {
             repositories {
@@ -100,7 +106,6 @@ jobs:
                   WebSettings s=w.getSettings();
                   s.setJavaScriptEnabled(true);
                   s.setDomStorageEnabled(true);
-                  s.setAllowFileAccess(true);
                   w.loadUrl("https://wurlitzer-jukebox.vercel.app/?client=b01b99b43d3342b596a2711efeac4d62");
                   setContentView(w);
               }
